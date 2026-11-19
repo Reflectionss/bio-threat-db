@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIOLOGICAL THREAT DATABASE · FACILITY 03</title>
+<style>
+  :root{
+    --bg:#030605; --bg2:#0a0f0c; --panel:#0c1410; --line:#1d3a29; --line2:#2b5a3d;
+    --g:#39ff88; --g2:#22c063; --gd:#14532d; --txt:#b9e8c8; --mut:#6b8475;
+    --red:#c0262d; --red2:#ff4d55; --amb:#d9b44a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--txt);min-height:100%}
+  body{font-family:"JetBrains Mono","IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;font-size:14px;line-height:1.65;overflow-x:hidden}
+  a{color:var(--g);text-decoration:none}
+  a:hover{text-shadow:0 0 8px var(--g)}
+  ::selection{background:var(--g);color:#000}
+  .g{color:var(--g);text-shadow:0 0 6px rgba(57,255,136,.45)}
+  .mut{color:var(--mut)}
+  .red{color:var(--red2)}
+
+  /* CRT */
+  body::before{content:"";position:fixed;inset:0;z-index:200;pointer-events:none;
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,.28) 0 1px,transparent 1px 3px)}
+  body::after{content:"";position:fixed;inset:0;z-index:201;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 62%,rgba(0,0,0,.65) 100%)}
+  #noise{position:fixed;inset:0;width:100%;height:100%;z-index:199;pointer-events:none;opacity:.05;mix-blend-mode:screen}
+  .glitch{animation:glitch .4s steps(2) 1}
+  @keyframes glitch{20%{transform:translate(-4px,1px);filter:hue-rotate(50deg)}40%{transform:translate(3px,-2px);clip-path:inset(15% 0 40% 0)}
+    60%{transform:translate(-2px,0);clip-path:inset(55% 0 8% 0)}80%{transform:translate(2px,0)}100%{transform:none;clip-path:none;filter:none}}
+  @keyframes blink{50%{opacity:0}}
+  .cursor::after{content:"▌";animation:blink 1s steps(2) infinite;color:var(--g)}
+
+  /* boot */
+  #boot{position:fixed;inset:0;z-index:150;background:#000;display:flex;align-items:center;justify-content:center;padding:20px}
+  #boot pre{font:inherit;color:var(--g);text-shadow:0 0 6px rgba(57,255,136,.5);white-space:pre-wrap;max-width:720px;width:100%}
+  #boot .gate{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;text-align:center;padding:20px}
+  #boot .gate .g1{color:var(--g);letter-spacing:.3em;font-size:13px}
+  #boot .gate .g2{color:var(--mut);font-size:12px;letter-spacing:.15em;animation:blink 1.4s steps(2) infinite}
+  .tear{position:fixed;left:0;right:0;z-index:198;pointer-events:none;background:rgba(57,255,136,.18);mix-blend-mode:screen;
+    box-shadow:0 0 0 1px rgba(255,77,85,.25);animation:tear .35s steps(3) forwards}
+  @keyframes tear{0%{transform:translateX(-30px)}50%{transform:translateX(25px)}100%{transform:translateX(0);opacity:0}}
+  #flash{position:fixed;inset:0;z-index:197;pointer-events:none;opacity:0}
+  #flash.red{background:radial-gradient(ellipse at center,rgba(192,38,45,.05),rgba(192,38,45,.4));animation:fl .7s ease-out}
+  #flash.green{background:radial-gradient(ellipse at center,rgba(57,255,136,.03),rgba(57,255,136,.22));animation:fl .7s ease-out}
+  @keyframes fl{0%{opacity:1}100%{opacity:0}}
+  body.alert::after{background:radial-gradient(ellipse at center,transparent 50%,rgba(120,0,0,.55) 100%);animation:alertp 1.4s ease-in-out infinite}
+  @keyframes alertp{50%{opacity:.5}}
+  .shake{animation:shake .4s}
+  @keyframes shake{20%{transform:translate(-8px,2px)}40%{transform:translate(7px,-2px)}60%{transform:translate(-5px,1px)}80%{transform:translate(3px,0)}}
+  .spec-img::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
+  .spec-img .rec{position:absolute;right:8px;top:8px;font-size:10px;color:var(--red2);background:rgba(0,0,0,.7);padding:1px 6px;z-index:2}
+  .spec-img .rec::before{content:"● ";animation:blink 1s steps(2) infinite}
+  .spec-img .sweep{position:absolute;left:0;right:0;height:18%;z-index:1;pointer-events:none;
+    background:linear-gradient(to bottom,transparent,rgba(57,255,136,.08),transparent);animation:sw 5s linear infinite}
+  @keyframes sw{from{top:-20%}to{top:110%}}
+  #aud{all:unset;cursor:pointer;color:var(--g2);margin-left:10px}
+  #aud:hover{color:var(--g)}
+  #boot .skip{position:absolute;right:16px;bottom:14px;color:var(--mut);font-size:12px;cursor:pointer}
+
+  /* layout */
+  .wrap{max-width:1240px;margin:0 auto;padding:0 18px 40px}
+  .topbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);border-bottom:1px solid var(--line);padding:8px 0;letter-spacing:.06em}
+  .topbar b{color:var(--g2);font-weight:normal}
+  .brand{display:flex;align-items:center;gap:14px;padding:16px 0 12px;border-bottom:1px solid var(--line)}
+  .logo{width:42px;height:42px;border:1px solid var(--g2);display:grid;place-items:center;font-size:11px;color:var(--g);letter-spacing:.05em}
+  .brand h1{font-size:15px;font-weight:600;letter-spacing:.18em;color:var(--g)}
+  .brand p{font-size:11px;color:var(--mut);letter-spacing:.2em}
+  nav{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:22px}
+  nav a{padding:10px 14px;font-size:12px;letter-spacing:.1em;color:var(--mut);border-right:1px solid var(--line)}
+  nav a:hover{color:var(--g);background:rgba(57,255,136,.05)}
+  nav a.on{color:#000;background:var(--g2);text-shadow:none}
+
+  #view{min-height:60vh}
+  #view.enter{animation:enter .45s steps(9)}
+  @keyframes enter{from{clip-path:inset(0 0 100% 0);opacity:.4}to{clip-path:inset(0);opacity:1}}
+
+  .panel{border:1px solid var(--line);background:var(--panel)}
+  .ph{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--bg2);border-bottom:1px solid var(--line);padding:6px 12px;font-size:11px;letter-spacing:.12em;color:var(--mut)}
+  .ph b{color:var(--g2);font-weight:normal}
+  .pb{padding:16px 18px}
+  h2.t{font-size:24px;letter-spacing:.14em;font-weight:600;color:var(--g);text-shadow:0 0 10px rgba(57,255,136,.4)}
+  h3.s{font-size:13px;letter-spacing:.16em;color:var(--g);margin:18px 0 8px;font-weight:600}
+  .kv{display:grid;grid-template-columns:170px 1fr;border-top:1px solid var(--line)}
+  .kv>div{padding:6px 10px;border-bottom:1px solid var(--line)}
+  .kv>div:nth-child(odd){color:var(--mut);font-size:12px;letter-spacing:.06em;background:rgba(0,0,0,.2)}
+  .btn{all:unset;box-sizing:border-box;border:1px solid var(--g2);color:var(--g);padding:7px 14px;cursor:pointer;font-size:12px;letter-spacing:.12em;display:inline-block}
+  .btn:hover,.btn:focus-visible{background:var(--g2);color:#000}
+  .btn.red{border-color:var(--red);color:var(--red2)}
+  .btn.red:hover{background:var(--red);color:#fff}
+
+  /* status tags */
+  .st{display:inline-block;font-size:10px;letter-spacing:.1em;padding:0 6px;border:1px solid;margin-right:6px;vertical-align:1px;white-space:nowrap}
+  .st.c{color:var(--g);border-color:var(--g2)}
+  .st.i{color:var(--amb);border-color:#7a6424}
+  .st.u{color:var(--red2);border-color:var(--red)}
+  .src{font-size:11px;color:var(--mut)}
+  .redact{background:#2a3a30;color:transparent;user-select:none;padding:0 2px}
+  .dmg{color:#3d5a49;letter-spacing:.04em}
+  ul.l{list-style:none;margin:6px 0}
+  ul.l li{padding:6px 0 6px 18px;position:relative;border-bottom:1px dashed #16281d}
+  ul.l li::before{content:"›";position:absolute;left:4px;color:var(--g2)}
+  .note{border-left:2px solid var(--line2);padding:6px 12px;margin:10px 0;background:rgba(0,0,0,.2);font-size:13px}
+  .warnbox{border:1px solid var(--red);background:rgba(192,38,45,.08);padding:10px 14px;margin:12px 0;color:#e8b7ba}
+  .warnbox b{color:var(--red2);letter-spacing:.12em}
+
+  /* home */
+  .hero{padding:26px 22px}
+  .hero .sub{letter-spacing:.3em;font-size:12px;color:var(--g2);margin-top:4px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+  .stats>div{padding:12px 16px;border-right:1px solid var(--line)}
+  .stats>div:last-child{border-right:0}
+  .stats b{display:block;font-size:20px;color:var(--g);font-weight:600}
+  .stats span{font-size:11px;color:var(--mut);letter-spacing:.1em}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  .card{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);background:var(--panel);display:grid;grid-template-columns:200px 1fr;min-height:220px}
+  .card:hover,.card:focus-visible{border-color:var(--g2);box-shadow:0 0 18px rgba(57,255,136,.15)}
+  .card .img{border-right:1px solid var(--line);background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .card .img img{width:100%;height:100%;object-fit:contain}
+  .card .info{padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+  .card .id{font-size:11px;letter-spacing:.2em;color:var(--mut)}
+  .card .nm{font-size:22px;letter-spacing:.14em;color:var(--g);font-weight:600}
+  .card .go{margin-top:auto;font-size:12px;color:var(--g2);letter-spacing:.14em}
+  .threat{display:inline-flex;gap:3px;vertical-align:middle}
+  .threat i{width:14px;height:8px;background:#1a2620}
+  .threat i.on{background:var(--red)}
+  .noimg{width:100%;height:100%;min-height:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px;
+    background:repeating-linear-gradient(45deg,#070b09 0 10px,#0b120e 10px 20px)}
+  .noimg .x{color:var(--red2);letter-spacing:.25em;font-size:12px;border:1px solid var(--red);padding:3px 10px;margin-bottom:8px}
+  .noimg .k{color:var(--txt);font-size:13px;letter-spacing:.06em}
+  .spec-img .noimg{position:absolute;inset:0}
+  .ph-img{color:var(--mut);font-size:11px;text-align:center;padding:14px;letter-spacing:.08em;line-height:1.6}
+
+  /* specimen */
+  .spec-head{display:grid;grid-template-columns:340px 1fr;gap:0}
+  .spec-img{border-right:1px solid var(--line);background:#000;position:relative;min-height:320px;display:flex;align-items:center;justify-content:center}
+  .spec-img img{max-width:100%;max-height:440px;display:block;object-fit:contain}
+  .spec-img .lbl{position:absolute;left:8px;top:8px;font-size:10px;color:var(--g2);background:rgba(0,0,0,.7);padding:1px 6px;border:1px solid var(--line)}
+  .spec-img .lbl2{position:absolute;right:8px;bottom:8px;font-size:10px;color:var(--mut);background:rgba(0,0,0,.7);padding:1px 6px}
+  .spec-body{display:grid;grid-template-columns:270px 1fr;gap:18px;margin-top:18px}
+  .idx{border:1px solid var(--line);background:var(--panel);align-self:start;position:sticky;top:10px}
+  .idx button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;gap:8px;width:100%;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12px;letter-spacing:.05em}
+  .idx button:hover,.idx button:focus-visible{background:rgba(57,255,136,.06);color:var(--g)}
+  .idx button.on{background:rgba(57,255,136,.1);color:var(--g);box-shadow:inset 3px 0 0 var(--g)}
+  .idx button .r{font-size:10px;color:var(--mut)}
+  .idx button.lock{color:#8a5a5d}
+  .idx button.lock .r{color:var(--red2)}
+  .idx .prog{padding:10px 12px;font-size:11px;color:var(--mut)}
+  .idx .bar{height:4px;background:#14211a;margin-top:6px}.idx .bar i{display:block;height:100%;background:var(--g2)}
+  .doc .ln{opacity:0;transform:translateY(3px)}
+  .doc .ln.on{opacity:1;transform:none;transition:opacity .25s,transform .25s}
+  .loading{color:var(--g2);font-size:12px;letter-spacing:.12em}
+
+  /* auth overlay */
+  #auth{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px}
+  #auth .box{width:min(560px,100%);border:1px solid var(--g2);background:#050a07}
+  #auth .box.denied{border-color:var(--red)}
+  #auth pre{font:inherit;white-space:pre-wrap;padding:16px 18px;min-height:150px;color:var(--g)}
+  #auth .pr{margin:0 18px 14px;border:1px solid var(--line2);height:14px}
+  #auth .pr i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--g2) 0 8px,transparent 8px 10px)}
+  #auth .act{padding:0 18px 16px;text-align:right}
+
+  /* biohazard warning */
+  #warn{position:fixed;inset:0;z-index:110;background:rgba(10,0,0,.88);display:none;align-items:center;justify-content:center;padding:16px}
+  #warn .box{width:min(520px,100%);border:1px solid var(--red);background:#0d0505;text-align:center;padding:22px}
+  #warn h4{color:var(--red2);letter-spacing:.3em;font-size:16px;margin:8px 0}
+  #warn .haz{font-size:40px;color:var(--red2);animation:blink 1.2s steps(2) infinite}
+
+  /* tables */
+  table.cmp{width:100%;border-collapse:collapse;font-size:13px}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:9px 10px;vertical-align:top;text-align:left}
+  table.cmp th{background:var(--bg2);color:var(--g2);font-weight:normal;letter-spacing:.1em;font-size:11px}
+  table.cmp td:first-child{color:var(--mut);width:150px;font-size:12px;letter-spacing:.06em;background:rgba(0,0,0,.2)}
+  .meter{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:10px;color:var(--mut)}
+  .meter .m{flex:1;height:6px;background:#14211a;max-width:180px}
+  .meter .m i{display:block;height:100%}
+  .xen .m i{background:var(--g2)} .hol .m i{background:var(--red)}
+  .locked-block{border:1px dashed var(--red);padding:18px;text-align:center;margin-top:18px;background:rgba(192,38,45,.05)}
+  .locked-block .f{color:var(--red2);letter-spacing:.12em;margin-bottom:6px}
+
+  footer{margin-top:30px;border-top:1px solid var(--line);padding-top:10px;font-size:11px;color:var(--mut);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  footer button{all:unset;cursor:pointer;color:var(--mut);text-decoration:underline}
+
+  @media (max-width:860px){
+    .cards{grid-template-columns:1fr}
+    .card{grid-template-columns:120px 1fr;min-height:170px}
+    .spec-head{grid-template-columns:1fr}
+    .spec-img{border-right:0;border-bottom:1px solid var(--line);min-height:240px}
+    .spec-body{grid-template-columns:1fr}
+    .idx{position:static}
+    .stats{grid-template-columns:1fr 1fr}
+    .stats>div:nth-child(2){border-right:0}
+    .kv{grid-template-columns:110px 1fr}
+    table.cmp td:first-child{width:90px}
+    nav a{padding:9px 10px;font-size:11px}
+  }
+  h2.t{font-size:clamp(18px,5.2vw,24px)}
+  .wrap{overflow-wrap:anywhere}
+  @media (max-width:560px){ table.cmp{font-size:12px} .card{grid-template-columns:1fr}.card .img{border-right:0;border-bottom:1px solid var(--line);height:180px} }
+</style>
+</head>
+<body>
+<canvas id="noise"></canvas>
+<div id="flash"></div>
+
+<div id="boot"><pre id="bootTxt"></pre><span class="skip" id="skip">[ SKIP ]</span></div>
+
+<div class="wrap" id="app">
+  <div class="topbar">
+    <span>FACILITY 03 · BIOCONTAINMENT RESEARCH DIVISION</span>
+    <span>NODE <b>BTD-03</b> · CLEARANCE <b id="clr">LEVEL 2</b> · <b id="clock">--:--:--</b> UTC <button id="aud">AUDIO: STANDBY</button></span>
+  </div>
+  <div class="brand">
+    <div class="logo">F-03</div>
+    <div><h1>BIOLOGICAL THREAT DATABASE</h1><p>CLASSIFIED CREATURE RESEARCH ARCHIVE</p></div>
+  </div>
+  <nav id="nav">
+    <a href="#/" data-r="">INDEX</a>
+    <a href="#/specimen/001" data-r="specimen/001">SPECIMEN 001</a>
+    <a href="#/specimen/002" data-r="specimen/002">SPECIMEN 002</a>
+    <a href="#/weakness" data-r="weakness">WEAKNESS ANALYSIS</a>
+    <a href="#/compare" data-r="compare">COMPARATIVE ANALYSIS</a>
+  </nav>
+  <main id="view"></main>
+  <footer>
+    <span>LISTENERS SURVIVAL · FACILITY 03 · 내부 열람 전용</span>
+    <span>무단 반출 · 복제 금지</span>
+    <button id="reset">열람 기록 초기화</button>
+  </footer>
+</div>
+
+<div id="warn"><div class="box">
+  <div class="haz">☣</div>
+  <h4>BIOHAZARD WARNING</h4>
+  <p id="warnTxt">위험 개체 자료입니다.</p>
+  <p class="mut" style="font-size:12px;margin-top:8px">본 자료의 무단 반출 및 복제를 금지합니다.</p>
+  <div style="margin-top:16px"><button class="btn red" id="warnOk">ACKNOWLEDGE · 열람</button> <button class="btn" id="warnNo">취소</button></div>
+</div></div>
+
+<div id="auth"><div class="box" id="authBox">
+  <pre id="authTxt"></pre>
+  <div class="pr" id="authPr" style="display:none"><i id="authBar"></i></div>
+  <div class="act"><button class="btn" id="authClose" style="display:none">CLOSE</button></div>
+</div></div>
+
+<script>
+/* ============ 설정: 개체 이미지 파일 경로 (같은 폴더의 images/ 에 넣으면 됨) ============ */
+const IMAGES = { '001':'4d9cb18df15ae8be658a895639bf92b0ee628023.gif', '002':null };   // null = 사진 자료 없음
+
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------- 상태(열람 기록) ---------- */
+const KEY='btd03-state';
+const S=Object.assign({read:{},unlocked:{},ack:{}},JSON.parse(localStorage.getItem(KEY)||'{}'));
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+$('reset').onclick=()=>{if(confirm('열람 기록과 잠금 해제 상태를 초기화합니다.')){localStorage.removeItem(KEY);sessionStorage.removeItem('btd03-boot');location.hash='#/';location.reload()}};
+
+/* ---------- 효과 ---------- */
+setInterval(()=>{$('clock').textContent=new Date().toISOString().slice(11,19)},1000);
+(function(){const c=$('noise'),x=c.getContext('2d');c.width=200;c.height=120;
+  setInterval(()=>{const im=x.createImageData(200,120),d=im.data;for(let i=0;i<d.length;i+=4){const v=Math.random()*255;d[i]=v*.4;d[i+1]=v;d[i+2]=v*.6;d[i+3]=255}x.putImageData(im,0,0)},90)})();
+/* ================= AUDIO ENGINE ================= */
+const SFX=(()=>{
+  let ctx=null,master=null,amb=null,on=localStorage.getItem('btd03-audio')!=='off',specLoop=null;
+  const AMB_VOL=.5;
+  function noiseBuf(sec,type='white'){
+    const n=ctx.sampleRate*sec,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+    let b0=0,b1=0,b2=0,last=0;
+    for(let i=0;i<n;i++){const w=Math.random()*2-1;
+      if(type==='pink'){b0=.99765*b0+w*.099;b1=.963*b1+w*.2965;b2=.57*b2+w*1.0526;d[i]=(b0+b1+b2+w*.1848)*.2}
+      else if(type==='brown'){last=(last+.02*w)/1.02;d[i]=last*3.5}
+      else d[i]=w}
+    return b}
+  function init(){
+    if(ctx){if(ctx.state==='suspended')ctx.resume();return}
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    master=ctx.createGain();master.gain.value=on?1:0;master.connect(ctx.destination);
+    amb=ctx.createGain();amb.gain.value=0;amb.connect(master);
+    // 1) 연구소 전력 험 (60Hz + 배음)
+    [[60,.018],[120,.010],[180,.005]].forEach(([f,v])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(amb);o.start()});
+    // 2) 환기 장치 소리 (갈색 노이즈 · 저역)
+    const vs=ctx.createBufferSource();vs.buffer=noiseBuf(4,'brown');vs.loop=true;
+    const vl=ctx.createBiquadFilter();vl.type='lowpass';vl.frequency.value=320;
+    const vg=ctx.createGain();vg.gain.value=.05;vs.connect(vl);vl.connect(vg);vg.connect(amb);vs.start();
+    // 3) 모니터 쉬익 (핑크 노이즈 · 고역, 천천히 일렁임)
+    const hs=ctx.createBufferSource();hs.buffer=noiseBuf(3,'pink');hs.loop=true;
+    const hh=ctx.createBiquadFilter();hh.type='bandpass';hh.frequency.value=2600;hh.Q.value=.6;
+    const hg=ctx.createGain();hg.gain.value=.022;
+    const lfo=ctx.createOscillator(),lg=ctx.createGain();lfo.frequency.value=.11;lg.gain.value=.01;lfo.connect(lg);lg.connect(hg.gain);lfo.start();
+    hs.connect(hh);hh.connect(hg);hg.connect(amb);hs.start();
+    amb.gain.setTargetAtTime(AMB_VOL,ctx.currentTime,1.2);
+    // 4) 간헐적 지지직
+    (function loop(){setTimeout(()=>{crackle(80+Math.random()*260,.05+Math.random()*.05);loop()},3500+Math.random()*7000)})();
+    updBtn();
+  }
+  function tone(f,dur=.06,vol=.05,type='square',at=0,slideTo=null,pan=0){
+    if(!ctx)return;const t=ctx.currentTime+at,o=ctx.createOscillator(),g=ctx.createGain(),p=ctx.createStereoPanner?ctx.createStereoPanner():null;
+    o.type=type;o.frequency.setValueAtTime(f,t);if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g);if(p){p.pan.value=pan;g.connect(p);p.connect(master)}else g.connect(master);o.start(t);o.stop(t+dur+.05)}
+  function crackle(ms=150,vol=.08){
+    if(!ctx)return;const n=Math.floor(ctx.sampleRate*ms/1000),b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+    let burst=0;for(let i=0;i<n;i++){if(Math.random()<.002)burst=Math.random()*400;d[i]=(burst-->0||Math.random()<.08)?(Math.random()*2-1):0}
+    const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();
+    f.type='bandpass';f.frequency.value=1500+Math.random()*1500;f.Q.value=.8;g.gain.value=vol;
+    s.buffer=b;s.connect(f);f.connect(g);g.connect(master);s.start()}
+  function noiseHit(dur,vol,freq,q=1,at=0,pan=0,type='white'){
+    if(!ctx)return;const t=ctx.currentTime+at,s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain(),p=ctx.createStereoPanner?ctx.createStereoPanner():null;
+    s.buffer=noiseBuf(dur+.05,type);f.type='bandpass';f.frequency.value=freq;f.Q.value=q;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    s.connect(f);f.connect(g);if(p){p.pan.value=pan;g.connect(p);p.connect(master)}else g.connect(master);s.start(t);s.stop(t+dur+.05)}
+  // 개체별 배경 소리
+  function specimen(id){
+    clearTimeout(specLoop);specLoop=null;if(!id)return;
+    const loop=()=>{specLoop=setTimeout(()=>{
+      if(id==='001'){ // 축축한 숨소리 같은 쉿 소리
+        const pan=(Math.random()*2-1)*.6;noiseHit(1.6,.05,900,.7,0,pan,'pink');noiseHit(1.2,.03,3200,2,.25,pan);
+      }else{ // 멀리서 암반을 파는 소리 (방향 있음)
+        const pan=(Math.random()*2-1);const n=2+Math.floor(Math.random()*3);
+        for(let k=0;k<n;k++){noiseHit(.22,.09,160,1.2,k*.55,pan,'brown');tone(70,.25,.05,'sine',k*.55,40,pan);noiseHit(.08,.03,2400,3,k*.55+.02,pan)}
+      }
+      loop()},id==='001'?6000+Math.random()*8000:5000+Math.random()*9000)};
+    loop()}
+  const api={
+    init,crackle,specimen,
+    tick(){tone(2200,.015,.012,'square')},
+    click(){tone(1400,.03,.03,'square');tone(900,.04,.02,'square',.03)},
+    key(){tone(1800+Math.random()*400,.012,.015,'square')},
+    data(n=10){for(let i=0;i<n;i++)tone(900+Math.random()*1800,.025,.018,'square',i*.035)},
+    line(){tone(1200,.02,.015,'square')},
+    beep(){tone(1200,.05,.04,'square')},
+    boot(){tone(55,1.2,.08,'sawtooth',0,220);noiseHit(.8,.05,600,.5)},
+    ok(){[880,1175,1568].forEach((f,i)=>tone(f,.16,.05,'sine',i*.1))},
+    granted(){[660,880,1320].forEach((f,i)=>tone(f,.22,.06,'triangle',i*.12))},
+    denied(){tone(140,.35,.09,'square');tone(110,.45,.09,'square',.38);crackle(300,.12)},
+    alarm(){for(let i=0;i<3;i++){tone(880,.32,.05,'sawtooth',i*.7,660);tone(660,.32,.05,'sawtooth',i*.7+.35,880)}},
+    glitch(){crackle(220+Math.random()*200,.1);tone(60+Math.random()*80,.15,.04,'sawtooth')},
+    toggle(){on=!on;localStorage.setItem('btd03-audio',on?'on':'off');if(!ctx)init();master.gain.setTargetAtTime(on?1:0,ctx.currentTime,.05);updBtn()},
+    get ready(){return !!ctx}
+  };
+  function updBtn(){const b=document.getElementById('aud');if(b)b.textContent='AUDIO: '+(on?(ctx?'ON':'STANDBY'):'OFF')}
+  return api;
+})();
+['pointerdown','keydown'].forEach(ev=>addEventListener(ev,()=>SFX.init(),{passive:true}));
+// UI 소리: 호버/클릭
+document.addEventListener('pointerover',e=>{const el=e.target.closest('a,button,.card');if(el&&el!==document.__lastHover){document.__lastHover=el;SFX.tick()}});
+document.addEventListener('click',e=>{if(e.target.closest('a,button'))SFX.click()},true);
+
+$('aud').addEventListener('pointerdown',e=>e.stopPropagation());
+$('aud').onclick=()=>{if(!SFX.ready)SFX.init();else SFX.toggle()};
+function glitch(el=document.body){el.classList.remove('glitch');void el.offsetWidth;el.classList.add('glitch');SFX.glitch();tear()}
+/* 화면 찢어짐 + 플래시 */
+function tear(){
+  const n=2+Math.floor(Math.random()*3);
+  for(let i=0;i<n;i++){const d=document.createElement('div');d.className='tear';
+    d.style.top=Math.random()*100+'vh';d.style.height=(2+Math.random()*14)+'px';d.style.animationDelay=(i*40)+'ms';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),400)}}
+function flash(color='red'){const f=$('flash');f.className='';void f.offsetWidth;f.className=color}
+/* 제목 해독 효과 */
+function scramble(el){
+  if(!el)return;const final=el.dataset.final||(el.dataset.final=el.textContent),ch='▒░█#%&@$01ABCDEF';let f=0;
+  clearInterval(el._scr);
+  const it=el._scr=setInterval(()=>{el.textContent=[...final].map((c,i)=>c===' '?' ':i<f?c:ch[Math.floor(Math.random()*ch.length)]).join('');
+    if(++f>final.length){clearInterval(it);el.textContent=final}},28)}
+(function loop(){setTimeout(()=>{glitch($('view'));loop()},9000+Math.random()*12000)})();
+
+/* ---------- 상태 태그 ---------- */
+const C='<span class="st c">CONFIRMED</span>',I='<span class="st i">UNDER INVESTIGATION</span>',U='<span class="st u">UNVERIFIED</span>';
+const R=n=>`<span class="redact">${'█'.repeat(n)}</span>`;
+
+/* ================= SPECIMEN DATA ================= */
+const SPEC={
+'001':{
+  name:'XENOMORPH',code:'XN',threat:5,
+  cls:'생체기계형 외계 기생체 · BIOMECHANICAL PARASITE',
+  meta:[['DESIGNATION','SPECIMEN 001 · XENOMORPH'],['CLASSIFICATION','생체기계형 외계 기생체'],
+        ['ORIGIN','미상의 외계 행성 · 인위적 설계 가능성 높음'],['HABITAT','지하 심층부의 검은 단일암체 구조물'],
+        ['FIRST RECORD',`${R(8)} · 지하 구조물 조사팀`],['CONTAINMENT','구조물 내부 봉인 상태로 휴면 · 지표 자연 출현 기록 없음'],
+        ['THREAT LEVEL','<span class="red">LEVEL 5 · EXTREME</span>']],
+  warn:'SPECIMEN 001 은 숙주 감염형 기생체입니다. 감염 경로와 증식 방식에 관한 자료가 포함되어 있습니다.',
+  sections:[
+   {id:'profile',t:'BIOLOGICAL PROFILE',ko:'생물학적 개요',body:`
+    <p>${C} SPECIMEN 001 은 미상의 외계 행성에서 기원한 기생 생물이다. 신체 구조와 생활사의 완성도로 보아 자연 진화의 산물이라기보다 <b class="g">누군가에 의해 설계되었을 가능성이 높다.</b></p>
+    <p>${C} 이 생물을 만든 존재는 알을 회수해 숨겨 두었다. 같은 재앙을 다른 누구도 겪지 않게 하려던 것으로 추정된다.</p>
+    <p>${C} 지표에서 자연적으로 나타나지 않는다. 지하 깊은 곳의 <b class="g">검은 단일암체 구조물</b> 안에 봉인된 채 휴면하며, 구조물을 연 침입자에게 깨어난다. 연구소는 이를 "판도라의 상자형 위협"으로 분류한다.</p>
+    <p>${C} <b class="g">여왕 개체, 집단 지성, 대규모 군집은 관측되지 않았다.</b> 개체는 단독으로 활동하며, 하나하나가 완성된 포식자다.</p>
+    <h3 class="s">생활사 단계 (LIFE CYCLE)</h3>
+    <ul class="l">
+      <li>${C} 알 — 가죽질의 알 형태 캡슐. 지하 구조물 내부에서 발견</li>
+      <li>${C} 페이스허거 — 거미와 유사한 형태. 알에서 나와 숙주를 찾음</li>
+      <li>${C} 배아 — 숙주 체내에 이식되어 성장</li>
+      <li>${C} 숙주 이탈 — 숙주의 형질 일부를 왜곡된 형태로 지닌 채 숙주의 몸을 뚫고 나옴</li>
+      <li>${C} 성체 — Egg Morph 를 통해 새로운 알을 만들어 순환을 반복</li>
+    </ul>
+    <div class="note">연구소 메모: 페이스허거, 배아, 숙주 이탈 개체는 모두 SPECIMEN 001 의 생활사 단계로 분류하며 별도 개체로 등록하지 않는다.</div>`},
+   {id:'physical',t:'PHYSICAL STRUCTURE',ko:'신체 구조',body:`
+    <p>${C} 성체는 생물 조직과 기계적 구조가 뒤섞인 듯한 <b class="g">생체기계형 외형</b>을 지닌다.</p>
+    <p>${C} 숙주에서 태어난 개체는 <b class="g">숙주의 특징 일부를 왜곡된 형태로 물려받는다.</b> 같은 종이라도 어떤 숙주에서 나왔는지에 따라 외형이 달라진다.</p>
+    <p>${C} 페이스허거는 여러 개의 다리를 지닌 거미와 유사한 형태다.</p>
+    <h3 class="s">세부 해부 구조</h3>
+    <div class="warnbox"><b>DATA NOTICE</b><br>아래 항목은 생존자 증언에 근거한 미확인 보고다. 표본 확보와 해부를 통한 검증이 필요하다.</div>
+    <ul class="l">
+      <li>${U} 길쭉한 두개부와 입안에서 튀어나오는 이중 턱 구조</li>
+      <li>${U} 외골격 형태의 표피와 길고 마디진 꼬리</li>
+      <li>${I} 숙주 종류에 따른 외형 차이의 범위 — 숙주별 비교 관찰 필요</li>
+    </ul>
+    <p class="dmg">▒▒▒ 표본 계측 기록 손상 · SECTOR 0x1A READ ERROR ▒▒▒</p>`},
+   {id:'host',t:'HOST INFECTION',ko:'숙주 감염 과정',body:`
+    <div class="warnbox"><b>BIOHAZARD</b><br>본 항목은 숙주 감염 절차를 다룬다.</div>
+    <h3 class="s">감염 경로</h3>
+    <ul class="l">
+      <li>${C} <b class="g">1단계 · 알</b> — 지하 구조물 안의 가죽질 캡슐 안에 페이스허거가 들어 있다.</li>
+      <li>${C} <b class="g">2단계 · 부착</b> — 알에서 나온 페이스허거가 숙주를 찾아 달라붙고, 체내에 배아를 이식한다.</li>
+      <li>${C} <b class="g">3단계 · 숙주 조건</b> — 숙주는 <b class="g">살아 있는 온혈 생물</b>이어야 한다. 사람과 가축 모두 해당된다.</li>
+      <li>${C} <b class="g">4단계 · 이탈</b> — 성장한 배아는 숙주의 몸을 격렬하게 뚫고 나온다. 숙주는 생존하지 못한다.</li>
+    </ul>
+    <h3 class="s">감염 후 처치</h3>
+    <p>${C} 숙주 이탈 전이라면 <b class="g">외과 수술 키트(Surgery Kit)</b>로 배아를 적출할 수 있다. 현재 확인된 유일한 처치법이다.</p>
+    <p>${C} 같은 구조물에서 발견되는 <b class="red">검은 점액(Black Goo)</b>에 노출되어 생긴 감염은 <b class="red">치료법이 없다.</b></p>
+    <h3 class="s">추가 조사 필요</h3>
+    <ul class="l">
+      <li>${I} 배아 이식부터 숙주 이탈까지 걸리는 시간</li>
+      <li>${I} 적출 수술이 가능한 시간 범위</li>
+      <li>${I} 잠복기 동안 숙주에게 나타나는 증상</li>
+    </ul>`},
+   {id:'repro',t:'REPRODUCTION',ko:'번식 및 증식 방식',file:'XENO_BIOLOGICAL_REPORT.dat',body:`
+    <p class="loading">FILE: XENO_BIOLOGICAL_REPORT.dat · DECRYPTED</p>
+    <h3 class="s">EGG MORPH</h3>
+    <p>${C} 성체는 <b class="g">Egg Morph</b> 라 불리는 과정을 수행한다. 붙잡은 대상의 <b class="g">살아 있는 생체 조직을 새로운 알로 바꾸는</b> 현상이며, 이 알에서 다시 페이스허거가 나와 순환이 시작된다.</p>
+    <h3 class="s">증식 순환</h3>
+    <ul class="l">
+      <li>${C} 알 → 페이스허거 → 배아 이식 → 숙주 이탈 → 성체 → Egg Morph → 알</li>
+      <li>${C} 알을 낳는 여왕 개체는 관측되지 않았다.</li>
+      <li>${I} 여왕 없이 알이 늘어나는 경로는 Egg Morph 로 추정된다. 다른 증식 경로가 있는지 확인이 필요하다.</li>
+      <li>${I} Egg Morph 가 일어나는 조건과 소요 시간</li>
+    </ul>
+    <div class="note">연구 소견: 성체 한 개체가 풀려나면 주변 생물이 차례로 새로운 알이 되어 감염이 기하급수적으로 퍼질 수 있다. 구조물을 열지 않는 것이 가장 확실한 차단 방법이다.</div>`},
+   {id:'acid',t:'ACIDIC FLUID',ko:'산성 체액',file:'XENO_BIOLOGICAL_REPORT.dat',body:`
+    <p class="loading">FILE: XENO_BIOLOGICAL_REPORT.dat · DECRYPTED</p>
+    <div class="warnbox"><b>VERIFICATION STATUS</b><br>산성 체액에 관한 현장 관측 기록은 아직 없다. 아래 내용은 생존자 증언에 근거한 가설이며 확정 사실로 취급하지 말 것.</div>
+    <h3 class="s">가설</h3>
+    <ul class="l">
+      <li>${U} 체액이 강한 산성을 띠어, 개체가 상처를 입으면 주변에 피해를 줄 수 있다.</li>
+      <li>${U} 근접 공격 시 공격자가 화상을 입을 수 있다.</li>
+      <li>${U} 체액이 바닥, 벽, 장비를 부식시킬 수 있다.</li>
+    </ul>
+    <h3 class="s">검증 실험 계획</h3>
+    <ul class="l">
+      <li>${I} 근접 교전 후 교전자의 부상 여부 기록</li>
+      <li>${I} 개체가 상처를 입은 지점 주변의 구조물 손상 관찰</li>
+      <li>${I} 접촉한 장비의 부식 정도 측정</li>
+    </ul>
+    <p class="dmg">▒▒▒ 시료 분석 결과 ${R(14)} 손상 ▒▒▒</p>`},
+   {id:'weak',t:'WEAKNESS ANALYSIS',ko:'약점 및 대응 분석',body:`
+    <p>${C} 배아는 <b class="g">외과 수술 키트</b>로 적출할 수 있다. 현재 확인된 유일한 사후 처치다.</p>
+    <p>${C} 개체는 봉인된 구조물 안에서 휴면한다. <b class="g">구조물을 열지 않으면 접촉할 일이 없다.</b></p>
+    <p>${I} 교전 시 유효한 무기, 필요한 화력, 회피 방법은 기록이 부족하다. 현장 실험이 필요하다.</p>
+    <p>${U} 화염, 냉기 등 특정 환경에 대한 취약성 — 근거 없음.</p>
+    <p style="margin-top:12px"><a class="btn" href="#/weakness">전체 약점 분석 페이지 →</a></p>`},
+   {id:'survival',t:'SURVIVAL GUIDELINES',ko:'생존 지침',body:`
+    <ol class="l" style="list-style:none">
+      <li><b class="g">01.</b> 지하에서 <b class="g">검은 단일암체 구조물</b>을 발견하면 진입하지 않는다. 내부에 남은 귀중한 물자는 미끼나 다름없다. ${C}</li>
+      <li><b class="g">02.</b> 진입이 불가피하다면 <b class="g">외과 수술 키트</b>를 반드시 휴대한다. ${C}</li>
+      <li><b class="g">03.</b> 가죽질의 알에 다가가지 않는다. 알에서는 페이스허거가 나온다. ${C}</li>
+      <li><b class="g">04.</b> 감염이 의심되면 즉시 배아 적출을 시도한다. 수술 가능 시간이 밝혀지지 않았으므로 지체하지 않는다. ${I}</li>
+      <li><b class="g">05.</b> <b class="red">검은 점액</b>과 절대 접촉하지 않는다. 치료법이 없다. ${C}</li>
+      <li><b class="g">06.</b> 가축 등 온혈 생물이 모인 곳으로 개체를 끌어들이지 않는다. 새로운 숙주와 Egg Morph 대상이 될 수 있다. ${I}</li>
+    </ol>`}
+  ]},
+'002':{
+  name:'THE HOLLOW',code:'HL',threat:5,
+  cls:'추적형 단독 개체 · PERSISTENT STALKER',
+  meta:[['DESIGNATION','SPECIMEN 002 · THE HOLLOW'],['CLASSIFICATION','단독 추적형 개체'],
+        ['HEIGHT','약 5.7 m'],['ORIGIN',`미상 · ${R(10)}`],['RECORDED PATTERNS','18종 (기습 6 · 기만성 기습 징후 2 포함)'],
+        ['DETECTION','청각 및 시각 · 마지막 위치 기억형'],['THREAT LEVEL','<span class="red">LEVEL 5 · EXTREME</span>']],
+  warn:'SPECIMEN 002 는 특정 대상을 지정해 끝까지 추적하는 개체입니다. 기록에는 다수의 음향 관련 보고가 포함되어 있습니다.',
+  sections:[
+   {id:'profile',t:'ENTITY PROFILE',ko:'개체 개요',body:`
+    <p>${C} 일반적인 야생 생물처럼 배회하다 대상을 잊지 않는다. <b class="g">생존자 한 명을 정하고, 그에게 닿을 방법을 찾아낸 뒤 그대로 실행한다.</b> 벽을 뚫고, 탑을 넘고, 숨어 있는 갱도 안까지 들어온다.</p>
+    <p>${C} 대부분의 생존자는 <b class="g">모습을 보기 훨씬 전에 소리를 먼저 듣는다.</b></p>
+    <h3 class="s">관측 제원</h3>
+    <ul class="l">
+      <li>${C} 신장 약 5.7 m</li>
+      <li>${C} 방향을 특정할 수 있는 고유 음향 20종 이상 기록</li>
+      <li>${C} 행동 패턴 18종 · 기습 6종, 실제 접촉 없이 기습을 의심하게 만드는 징후 2종 포함</li>
+      <li>${C} 단독 생존자와 집단 모두를 대상으로 활동</li>
+    </ul>
+    <p class="dmg">▒▒▒ 최초 조우 기록 ${R(10)} · FILE CORRUPTED ▒▒▒</p>`},
+   {id:'hunting',t:'HUNTING BEHAVIOR',ko:'사냥 행동',body:`
+    <h3 class="s">사냥 패턴 (HUNT PATTERNS)</h3>
+    <ul class="l">
+      <li>${C} <b class="g">The Encounter</b> — 40~50 m 밖에서 나타나 다가온다. 추격은 수 분간 이어진다.</li>
+      <li>${C} <b class="g">The Jumpscare</b> — 1 m 뒤에서 소리 없이 따라오다가, 대상이 뒤돌아보는 순간 모습을 드러낸다.</li>
+      <li>${C} <b class="g">The Rocket</b> — 멀리 탁 트인 곳에 모습을 드러내고 웃음소리를 낸 뒤 돌진한다.</li>
+      <li>${C} <b class="g">The Peek</b> — 방금 연 문 뒤에 서 있다.</li>
+      <li>${C} <b class="g">The Flash</b> — 약 0.2초 동안 보였다가 사라진다. 목격자 대부분이 확신하지 못한다.</li>
+      <li>${C} <b class="g">The Grab</b> — 시야가 암전되고 질주하는 소리가 들린 뒤, 대상은 사방이 막힌 암반 공간에서 깨어난다. 개체는 그 안에 서서 대상을 바라본다. 이 공간에서 사망한 사례는 없다.</li>
+      <li>${C} <b class="g">The Nightmare</b> — 잠든 대상의 밤이 끝나지 않는다. 피아노 소리, 천둥, 숫자를 세는 소리 뒤에 약 1분간 꿈속에서 추격당한다.</li>
+    </ul>
+    <h3 class="s">공격 직전 행동</h3>
+    <p>${C} 다음 일격이 대상을 죽일 수 있는 상황이 되면, <b class="red">개체는 잠시 멈추고 뜸을 들인다.</b></p>
+    <h3 class="s">출현 간격</h3>
+    <p>${C} 두 패턴이 연달아 일어나지 않는다. 하나가 끝나면 다음 출현까지 일정한 공백이 있다.</p>`},
+   {id:'audio',t:'AUDITORY RESPONSE',ko:'청각 반응',body:`
+    <h3 class="s">위치 추적 원리</h3>
+    <p>${C} 개체는 대상의 현재 위치를 알지 못한다. <b class="g">마지막으로 보거나 들은 위치</b>를 기억하고 그곳으로 간다.</p>
+    <p>${C} 이 기억은 새로운 단서가 생길 때만 갱신된다.</p>
+    <table class="cmp" style="margin:10px 0">
+      <tr><th>갱신 조건 (TRIGGER)</th><th>상태</th></tr>
+      <tr><td>시야</td><td>${C} 대상이 개체의 시야에 들어옴</td></tr>
+      <tr><td>질주</td><td>${C} 대상이 달림</td></tr>
+      <tr><td>물소리</td><td>${C} 대상이 물을 첨벙이며 이동함</td></tr>
+      <tr><td>부상</td><td>${C} 대상이 상처를 입음</td></tr>
+      <tr><td>파괴음</td><td>${C} 대상이 벽이나 바닥을 부숨</td></tr>
+    </table>
+    <p>${C} <b class="g">움직이지 않고 소리를 내지 않으면</b>, 개체는 대상이 있던 위치로 가서 주변을 수색한다. 땅속 구멍에 숨어 이 수색을 지켜본 생존자들은 극심한 공포를 증언했다.</p>
+    <h3 class="s">개체가 내는 소리</h3>
+    <p>${C} 개체가 내는 소리는 <b class="g">방향과 거리를 분명히 가늠할 수 있다.</b> 굴착음만으로도 어느 쪽에서 파고드는지 알 수 있다. 양쪽 귀로 소리를 정확히 들을 수 있는 헤드셋 착용을 권고한다.</p>
+    <ul class="l">
+      <li>${I} 몸을 낮추거나 천천히 걷는 행동이 감지에 영향을 주는지</li>
+      <li>${I} 최대 감지 거리 — 지형에 따라 차이가 있어 추가 측정 필요</li>
+    </ul>`},
+   {id:'move',t:'MOVEMENT ANALYSIS',ko:'이동 및 추적 방식',body:`
+    <h3 class="s">장애물 돌파</h3>
+    <p>${C} 앞이 막혀도 끝없이 돌아가지 않는다. <b class="g">앞을 가로막은 벽을 한 구역씩 파낸다.</b> 벽에 금이 가는 것이 보이고, 그 소리가 암반을 타고 멀리 전달된다.</p>
+    <p>${C} 틈을 건너는 다리 놓기와 기둥 쌓기도 같은 방식으로 한다.</p>
+    <p>${C} <b class="red">스스로 벽을 쌓아 숨으면, 개체에게 할 일을 만들어 줄 뿐이다.</b></p>
+    <h3 class="s">수직 이동</h3>
+    <p>${C} 대상이 높은 곳으로 오르면 따라 오른다. 탁 트인 곳에 기둥을 쌓아 올라가면, 개체는 따로 기둥을 쌓지 않고 <b class="g">대상이 쌓은 기둥을 타고 올라온다.</b> 대상에게 가까워질수록 더 천천히 오른다.</p>
+    <p>${C} 오를 것이 전혀 없을 때에만 직접 발판을 쌓는다.</p>
+    <h3 class="s">좁은 공간</h3>
+    <p>${C} 키가 약 5.7 m 라 지하실에 선 채로 들어갈 수 없다. 대신 <b class="g">네 발로 기어서</b> 들어온다. 개체가 파는 터널의 높이는 약 2 m 에 불과하다. 몸집에 비해 지나치게 좁은 통로를 기어 오는 모습이 반복해서 목격되었다.</p>
+    <h3 class="s">수중 이동</h3>
+    <p>${C} 수면에 떠다니지 않고 <b class="g">물속으로 잠수해 헤엄친다.</b> <b class="red">노 젓는 배보다 빠르다.</b></p>
+    <h3 class="s">속도</h3>
+    <p>${C} 추격 속도는 조우할 때마다 다르다. 대상이 너무 멀어지면 속도를 올려 따라잡는다. 한 번 익힌 도주 패턴을 계속 쓸 수 없다.</p>`},
+   {id:'env',t:'ENVIRONMENTAL INTERACTION',ko:'주변 환경과의 상호작용',file:'HOLLOW_BEHAVIOR_REPORT.dat',body:`
+    <p class="loading">FILE: HOLLOW_BEHAVIOR_REPORT.dat · DECRYPTED</p>
+    <h3 class="s">파괴하지 않는 구조물</h3>
+    <p>${C} 상자, 통, 보관함, 생물 소환 장치처럼 <b class="g">내용물을 담고 있는 구조물은 부수지 않는다.</b> 예외 사례는 기록되지 않았다.</p>
+    <h3 class="s">존재 징후 (PRESENCE)</h3>
+    <ul class="l">
+      <li>${C} <b class="g">The Watcher</b> — 시야 어딘가에 완전히 멈춰 서 있다. 알아차리는 순간 사라진다.</li>
+      <li>${C} <b class="g">Paranoia</b> — 그 뒤 약 1분간 발소리, 문소리, 먼 곳의 굴착음이 들린다. 실제로 일어난 일은 없다.</li>
+      <li>${C} <b class="g">The Lurker</b> — 거처 주변을 맴돌 뿐 공격하지 않는다. 정면으로 바라보면 웃음소리를 내며 검은 연기 속으로 사라진다.</li>
+      <li>${C} <b class="g">The Visit</b> — 오랜 외출 후 돌아오면 문이 열려 있고 횃불이 꺼져 있으며, 침대 위에 둔 적 없는 물체가 놓여 있다. 사라진 것은 없고 습격도 없다.</li>
+      <li>${C} <b class="g">The Impostor</b> — 대상과 같은 이름, 같은 모습의 누군가가 통신망에 접속한다.</li>
+      <li>${C} <b class="g">The Congregation</b> — 반경 40 m 안의 모든 동물이 동시에 멈추고 대상을 바라보며 눈으로 따라온다. 그리고 같은 순간에 다시 풀을 뜯는다.</li>
+    </ul>
+    <h3 class="s">기만 현상 (DOUBT)</h3>
+    <ul class="l">
+      <li>${C} <b class="g">False Walls</b> — 지나온 터널이 벽으로 막혀 있다. 파내도 계속 벽이 나오지만, 걸어가 보면 벽은 없다. 물리적 실체가 없는 환각으로 판단된다.</li>
+      <li>${C} <b class="g">The Poltergeist</b> — 주변의 문과 상자가 저절로 열리고 닫힌다.</li>
+      <li>${C} <b class="g">The Whisperer</b> — 깊은 갱도 안에서 속삭이는 목소리가 들린다.</li>
+      <li>${C} <b class="g">Adrenaline</b> — 심장 박동이 들리고 갑자기 시야가 사라진다. 이때 다가오는 다른 생물들은 실제다.</li>
+      <li>${C} <b class="g">Cave ambience</b> — 존재하지 않는 동굴에서 소리가 들려온다.</li>
+    </ul>
+    <p>${C} The Grab 의 암반 공간은 생존자의 거처와 떨어진 암반 속에 만들어지며, 이후 흔적 없이 원래 상태로 돌아간다.</p>`},
+   {id:'weak',t:'WEAKNESS ANALYSIS',ko:'회피 및 대응 분석',body:`
+    <p>${C} <b class="g">먼 거리에서 눈을 똑바로 마주치면</b> 때때로 물러나 한동안 숨는다. 다시 돌아오며, 곧바로 반복해서 통하지 않는다. 이것만 믿고 계획을 세우지 말 것.</p>
+    <p>${C} <b class="g">움직이지 않고 소리를 내지 않으면</b> 기억 위치가 갱신되지 않는다. 개체는 대상이 있던 곳으로 가서 수색한다.</p>
+    <p>${C} 배로 달아나는 방법은 효과가 낮다. 개체가 배보다 빠르다.</p>
+    <p>${I} 상자, 보관함 등 부수지 않는 구조물로 방벽을 쌓는 효과 — 부수지 않는 것은 확인되었으나, 우회해서 파고드는지 실험이 필요하다.</p>
+    <p>${U} 빛, 횃불, 특정 무기에 대한 약점 — 근거 없음.</p>
+    <p>${U} 사살 가능 여부 — 기록 없음.</p>
+    <p style="margin-top:12px"><a class="btn" href="#/weakness">전체 약점 분석 페이지 →</a></p>`},
+   {id:'survival',t:'SURVIVAL GUIDELINES',ko:'생존 지침',body:`
+    <ol class="l" style="list-style:none">
+      <li><b class="g">01.</b> <b class="g">소리에 집중한다.</b> 개체의 소리는 방향을 알 수 있으므로, 굴착음이 나는 쪽으로 접근 경로를 판단한다. ${C}</li>
+      <li><b class="g">02.</b> 쫓기는 중에는 <b class="g">달리기, 벽 부수기, 물 첨벙이기를 피한다.</b> 모두 위치를 알려 준다. ${C}</li>
+      <li><b class="g">03.</b> 아직 발견되지 않았다면 <b class="g">멈추고 조용히 기다린다.</b> 개체는 마지막 위치로 가서 수색하므로, 그 자리에서는 미리 벗어나 있어야 한다. ${C}</li>
+      <li><b class="g">04.</b> 벽을 쌓아 숨거나 기둥을 쌓아 오르는 방법은 통하지 않는다. 파고 들어오거나 따라 오른다. ${C}</li>
+      <li><b class="g">05.</b> 물이나 배로 달아나지 않는다. 물속에서 더 빠르게 추격한다. ${C}</li>
+      <li><b class="g">06.</b> 멀리서 개체가 보이면 <b class="g">눈을 똑바로 마주친다.</b> 물러날 수 있지만 매번 통하지는 않는다. ${C}</li>
+      <li><b class="g">07.</b> 보이고 들리는 것이 모두 진짜는 아니다. 막힌 벽, 발소리 같은 환각 현상이 보고되었다. 침착하게 판단한다. ${C}</li>
+    </ol>`}
+  ]}
+};
+
+/* ================= WEAKNESS PAGE DATA ================= */
+const WEAK={
+ '001':[
+  ['C','외과 수술 키트로 배아 적출 가능','감염 후 유일하게 확인된 처치'],
+  ['C','봉인 구조물을 열지 않으면 접촉 없음','지표 자연 출현 기록 없음'],
+  ['C','숙주는 살아 있는 온혈 생물로 한정','숙주 조건이 제한됨'],
+  ['C','검은 점액 감염은 치료 불가','회피 외 대응 수단 없음 (위험 요소)'],
+  ['I','적출 수술 가능 시간','이식 후 숙주 이탈까지의 시간 측정 필요'],
+  ['I','교전 시 유효한 무기와 화력','현장 실험 필요'],
+  ['I','Egg Morph 발생 조건','대상 종류, 소요 시간 관찰 필요'],
+  ['U','산성 체액','생존자 증언 · 관측 기록 없음'],
+  ['U','화염, 냉기 등 환경 취약성','근거 없음'],
+ ],
+ '002':[
+  ['C','먼 거리에서 눈을 마주치면 일시 후퇴','연속으로 통하지 않음 · 확정적이지 않음'],
+  ['C','정지 및 무음 시 위치 갱신 안 됨','마지막 위치로 이동해 수색'],
+  ['C','내용물을 담은 구조물은 부수지 않음','상자, 통, 보관함 등'],
+  ['C','The Grab 암반 공간에서 사망 사례 없음','해당 패턴 한정'],
+  ['C','치명적 일격 직전 잠시 멈춤','대응할 수 있는 짧은 시간'],
+  ['C','배로 도주하는 방법은 효과 낮음','배보다 빠름 (위험 요소)'],
+  ['I','부수지 않는 구조물을 방벽으로 쓰는 효과','우회 굴착 여부 실험 필요'],
+  ['I','몸을 낮추거나 천천히 걷는 행동의 효과','관측된 감지 조건은 질주뿐'],
+  ['U','빛, 횃불에 대한 반응','근거 없음'],
+  ['U','사살 가능 여부','기록 없음'],
+ ]};
+
+/* ================= COMPARE DATA ================= */
+const CMP=[
+ ['감지 방식','숙주가 될 생물을 찾음. 감지 수단(시각, 청각 등)은 밝혀지지 않음 '+I,'시야, 질주, 물소리, 부상, 파괴음으로 마지막 위치를 갱신 '+C,2,5],
+ ['추적 방식','봉인 구조물 안에서 휴면하며 구조물을 연 침입자를 노림 '+C,'한 명을 지정해 경로를 찾아내고 끝까지 추적 '+C,2,5],
+ ['공격 방식','페이스허거가 숙주에 배아 이식, 성체는 Egg Morph 로 생체 조직을 알로 바꿈 '+C,'다양한 사냥 패턴과 기습 · 치명적 일격 직전 멈춤 '+C,5,4],
+ ['이동 특성','성체의 이동 능력에 관한 관측 기록 부족 '+I,'벽 굴착, 기둥 오르기, 다리 놓기, 네 발 이동, 잠수 고속 이동 '+C,2,5],
+ ['생존 위협','감염 시 숙주 이탈로 사망 · 증식으로 위협 확산 '+C,'장시간 추격과 심리적 압박 · 회피 수단 제한 '+C,5,4],
+ ['회피 가능성','구조물을 열지 않으면 높음 · 감염 후에는 적출 수술 필요 '+C,'눈 마주치기, 정지와 무음으로 시간 확보 가능하나 확정적이지 않음 '+C,2,4],
+];
+const CMP_LOCK=[
+ ['주요 위험 요소','<b class="red">검은 점액 감염은 치료 불가.</b> Egg Morph 로 주변 생물이 새 알이 되어 감염이 퍼질 수 있음. 구조물 안의 물자가 침입을 유도함.','<b class="red">벽, 기둥, 물 같은 일반적인 도주 수단이 통하지 않음.</b> 추격 속도가 매번 달라 패턴을 익히기 어려움. 환각 현상으로 판단이 흐려짐.'],
+ ['종합 평가','<b class="g">회피형 위협.</b> 접촉 자체를 피하면 위험이 크게 줄어듦. 감염 후에는 시간 싸움.','<b class="g">추격형 위협.</b> 한번 지정되면 벗어나기 어려움. 소리 관리와 위치 이동이 생존의 핵심.'],
+];
+
+/* ================= ROUTER ================= */
+const view=$('view');
+function route(){
+  const h=location.hash.replace(/^#\/?/,'');
+  $('warn').style.display='none';
+  document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===h.split('?')[0]||(a.dataset.r!==''&&h.startsWith(a.dataset.r))));
+  let m;
+  if(!h)renderHome();
+  else if(m=h.match(/^specimen\/(00[12])$/))openSpecimen(m[1]);
+  else if(h==='weakness')renderWeak();
+  else if(h==='compare')renderCompare();
+  else renderHome();
+  view.classList.remove('enter');void view.offsetWidth;view.classList.add('enter');
+  window.scrollTo({top:0});
+  if(!/^specimen\//.test(h)){SFX.specimen(null);document.body.classList.remove('alert')}
+  SFX.crackle(120,.06);SFX.data(6);
+  scramble(view.querySelector('h2.t'));
+  updateClearance();
+}
+addEventListener('hashchange',route);
+
+const NOIMG=id=>`<div class="noimg"><div class="x">IMAGE CLASSIFIED</div><div class="k">미공개 · 사진 자료 없음</div><div class="mut" style="font-size:10px;margin-top:6px">SPECIMEN ${id} · VISUAL RECORD NOT AVAILABLE</div></div>`;
+function imgTag(id,cls=''){
+  if(!IMAGES[id])return NOIMG(id);
+  return `<img src="${IMAGES[id]}" alt="SPECIMEN ${id}" class="${cls}" onerror="this.outerHTML=NOIMG('${id}')">`}
+const threatBar=n=>`<span class="threat">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const total=Object.values(SPEC).reduce((a,s)=>a+s.sections.length,0);
+  const read=Object.keys(S.read).length;
+  view.innerHTML=`
+  <div class="panel">
+    <div class="ph"><span>BTD-03 / INDEX</span><b>DATABASE CONNECTION ESTABLISHED</b></div>
+    <div class="hero">
+      <h2 class="t">BIOLOGICAL THREAT DATABASE</h2>
+      <div class="sub">CLASSIFIED SPECIMEN ARCHIVE</div>
+      <p style="margin-top:16px">현재 등록된 연구 대상은 총 <b class="g">2개체</b>입니다.<span class="cursor"></span></p>
+      <p class="mut" style="font-size:12px;margin-top:6px">모든 기록은 현장 관측으로 확인된 정보(${C})와 추가 조사가 필요한 정보(${I}, ${U})로 구분되어 있습니다.</p>
+    </div>
+    <div class="stats">
+      <div><b>02</b><span>REGISTERED SPECIMENS</span></div>
+      <div><b>${String(read).padStart(2,'0')}/${total}</b><span>RECORDS REVIEWED</span></div>
+      <div><b>${Object.keys(S.unlocked).length}/3</b><span>RESTRICTED FILES OPEN</span></div>
+      <div><b class="red">LVL 5</b><span>MAX THREAT LEVEL</span></div>
+    </div>
+  </div>
+  <div class="cards">
+    ${['001','002'].map(id=>{const s=SPEC[id];return `
+    <a class="card" href="#/specimen/${id}">
+      <div class="img">${imgTag(id)}</div>
+      <div class="info">
+        <div class="id">SPECIMEN ${id}</div>
+        <div class="nm">${s.name}</div>
+        <div class="mut" style="font-size:12px">${s.cls}</div>
+        <div style="font-size:12px">THREAT ${threatBar(s.threat)} <span class="red">LEVEL ${s.threat}</span></div>
+        <div style="font-size:12px" class="mut">열람 ${s.sections.filter(x=>S.read[id+'/'+x.id]).length}/${s.sections.length}</div>
+        <div class="go">OPEN RECORD →</div>
+      </div>
+    </a>`}).join('')}
+  </div>
+  <div class="cards">
+    <a class="card" href="#/weakness" style="grid-template-columns:1fr;min-height:0"><div class="info"><div class="id">ANALYSIS</div><div class="nm" style="font-size:16px">WEAKNESS ANALYSIS</div><div class="mut" style="font-size:12px">두 개체의 확인된 약점과 실험이 필요한 항목</div><div class="go">OPEN →</div></div></a>
+    <a class="card" href="#/compare" style="grid-template-columns:1fr;min-height:0"><div class="info"><div class="id">ANALYSIS</div><div class="nm" style="font-size:16px">COMPARATIVE ANALYSIS</div><div class="mut" style="font-size:12px">감지, 추적, 공격, 이동, 회피 비교</div><div class="go">OPEN →</div></div></a>
+  </div>`;
+}
+
+/* ---------- SPECIMEN ---------- */
+let pendingSpec=null;
+function openSpecimen(id){
+  if(!S.ack[id]){
+    pendingSpec=id;$('warnTxt').textContent=SPEC[id].warn;$('warn').style.display='flex';
+    document.body.classList.add('alert');flash('red');SFX.alarm();
+    view.innerHTML=`<div class="panel"><div class="pb loading">AWAITING AUTHORIZATION...<span class="cursor"></span></div></div>`;return}
+  renderSpecimen(id);
+}
+$('warnOk').onclick=()=>{S.ack[pendingSpec]=1;save();$('warn').style.display='none';document.body.classList.remove('alert');glitch(view);renderSpecimen(pendingSpec)};
+$('warnNo').onclick=()=>{$('warn').style.display='none';document.body.classList.remove('alert');location.hash='#/'};
+
+let curSpec=null;
+function renderSpecimen(id){
+  curSpec=id;const s=SPEC[id];
+  view.innerHTML=`
+  <div class="panel">
+    <div class="ph"><span>BTD-03 / SPECIMEN ${id}</span><b class="red">☣ BIOHAZARD · RESTRICTED</b></div>
+    <div class="spec-head">
+      <div class="spec-img">${imgTag(id)}<span class="lbl">SPECIMEN ${id} · REFERENCE IMAGE</span><span class="lbl2">FACILITY 03 ARCHIVE</span></div>
+      <div class="pb">
+        <div class="mut" style="font-size:11px;letter-spacing:.2em">SPECIMEN ${id}</div>
+        <h2 class="t">${s.name}</h2>
+        <div class="mut" style="margin:4px 0 12px;font-size:12px">${s.cls}</div>
+        <div class="kv">${s.meta.map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join('')}</div>
+      </div>
+    </div>
+  </div>
+  <div class="spec-body">
+    <div class="idx" id="idx"></div>
+    <div class="panel"><div class="ph"><span id="secPath">—</span><b id="secState">—</b></div><div class="pb doc" id="doc"></div></div>
+  </div>`;
+  drawIdx();
+  showSection(s.sections[0].id);
+  const si=view.querySelector('.spec-img');
+  si.insertAdjacentHTML('beforeend',`<span class="rec">${IMAGES[id]?'LIVE FEED':'NO SIGNAL'}</span><span class="sweep"></span>`);
+  scramble(view.querySelector('h2.t'));
+  SFX.specimen(id);
+}
+function isLocked(id,sec){return sec.file&&!S.unlocked[sec.file]}
+function prereq(id){const s=SPEC[id];return s.sections.filter(x=>!x.file)}
+function drawIdx(){
+  const id=curSpec,s=SPEC[id];
+  const open=prereq(id),done=open.filter(x=>S.read[id+'/'+x.id]).length;
+  $('idx').innerHTML=s.sections.map(x=>{
+    const lock=isLocked(id,x),rd=S.read[id+'/'+x.id];
+    return `<button data-sec="${x.id}" class="${lock?'lock':''}">
+      <span>${x.t}<br><span class="mut" style="font-size:11px">${x.ko}</span></span>
+      <span class="r">${lock?'🔒 .dat':rd?'READ':'NEW'}</span></button>`}).join('')+
+    `<div class="prog">REVIEW PROGRESS ${done}/${open.length}<div class="bar"><i style="width:${done/open.length*100}%"></i></div>
+     <div style="margin-top:6px">${s.sections.some(x=>x.file&&!S.unlocked[x.file])?'일반 자료를 모두 열람하면 제한 파일 접근 권한이 부여됩니다.':'<span class="g">모든 제한 파일 접근 가능</span>'}</div></div>`;
+  $('idx').querySelectorAll('button').forEach(b=>b.onclick=()=>showSection(b.dataset.sec));
+}
+let docRun=0;
+async function showSection(secId){
+  const id=curSpec,s=SPEC[id],sec=s.sections.find(x=>x.id===secId);
+  if(isLocked(id,sec)){tryUnlock(id,sec);return}
+  const run=++docRun;
+  document.querySelectorAll('#idx button').forEach(b=>b.classList.toggle('on',b.dataset.sec===secId));
+  $('secPath').textContent=`SPECIMEN ${id} / ${sec.t}`;
+  $('secState').textContent=sec.file?'RESTRICTED · '+sec.file:'LOADING...';
+  const doc=$('doc');
+  doc.innerHTML=`<div class="loading">LOADING RECORD ${s.code}-${secId.toUpperCase()}...<span class="cursor"></span></div>`;
+  SFX.data(12);
+  await sleep(350+Math.random()*300);if(run!==docRun)return;
+  doc.innerHTML=`<h3 class="s" style="margin-top:0;font-size:16px">${sec.t} <span class="mut" style="font-size:12px;letter-spacing:.05em">· ${sec.ko}</span></h3>`+sec.body;
+  [...doc.children].forEach(el=>el.classList.add('ln'));
+  const items=[...doc.querySelectorAll('.ln')];
+  for(let i=0;i<items.length;i++){if(run!==docRun)return;items[i].classList.add('on');SFX.line();await sleep(70)}
+  if(!sec.file)$('secState').textContent='RECORD LOADED';
+  S.read[id+'/'+secId]=1;save();drawIdx();
+  document.querySelectorAll('#idx button').forEach(b=>b.classList.toggle('on',b.dataset.sec===secId));
+  updateClearance();
+}
+
+/* ---------- RESTRICTED FILE AUTH ---------- */
+let authBusy=false;
+async function authSeq(file,ok,reason,onDone){
+  if(authBusy)return;authBusy=true;
+  const box=$('authBox'),t=$('authTxt'),pr=$('authPr'),bar=$('authBar'),cl=$('authClose');
+  $('auth').style.display='flex';box.classList.remove('denied');pr.style.display='none';cl.style.display='none';bar.style.width='0';
+  t.style.color='var(--g)';t.textContent='';
+  const line=async(s,d=420)=>{for(const ch of s){t.textContent+=ch;if(ch!==' '&&ch!=='\n')SFX.key();await sleep(9)}t.textContent+='\n';await sleep(d)};
+  await line('> REQUEST FILE: '+file,300);
+  await line('ACCESS AUTHENTICATION...');
+  await line('VERIFYING CREDENTIALS...',650);
+  if(!ok){
+    box.classList.add('denied');t.style.color='var(--red2)';glitch(box);
+    SFX.denied();flash('red');box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake');
+    await line('\nACCESS DENIED.',200);await line('CLEARANCE INSUFFICIENT',200);await line(reason,0);
+    cl.style.display='inline-block';authBusy=false;return}
+  SFX.granted();flash('green');
+  await line('ACCESS GRANTED.',500);
+  await line('\nRECOVERING ARCHIVED DATA...',200);
+  pr.style.display='block';
+  for(let p=0;p<=100;p+=Math.random()*6+2){bar.style.width=Math.min(100,p)+'%';SFX.beep();await sleep(60)}
+  bar.style.width='100%';SFX.ok();await line('RECOVERY COMPLETE · 100%',600);
+  glitch(box);await sleep(300);
+  $('auth').style.display='none';authBusy=false;onDone&&onDone();
+}
+$('authClose').onclick=()=>{$('auth').style.display='none'};
+function tryUnlock(id,sec){
+  const left=prereq(id).filter(x=>!S.read[id+'/'+x.id]);
+  authSeq(sec.file,left.length===0,
+    left.length?`미열람 일반 자료 ${left.length}건:\n`+left.map(x=>'  - '+x.t).join('\n'):'',
+    ()=>{S.unlocked[sec.file]=1;save();drawIdx();updateClearance();showSection(sec.id)});
+}
+
+/* ---------- WEAKNESS ---------- */
+function renderWeak(){
+  const tag={C,I,U};
+  const block=id=>`
+   <div class="panel" style="margin-top:18px">
+     <div class="ph"><span>SPECIMEN ${id} · ${SPEC[id].name}</span><b>${WEAK[id].length} ITEMS</b></div>
+     <div class="pb" style="padding:0;overflow-x:auto">
+       <table class="cmp"><tr><th style="width:170px">STATUS</th><th>항목</th><th>비고</th></tr>
+       ${WEAK[id].map(([s,a,b])=>`<tr><td>${tag[s]}</td><td>${a}</td><td class="mut">${b}</td></tr>`).join('')}
+       </table></div></div>`;
+  const cnt=k=>WEAK['001'].concat(WEAK['002']).filter(x=>x[0]===k).length;
+  view.innerHTML=`
+  <div class="panel">
+    <div class="ph"><span>BTD-03 / WEAKNESS ANALYSIS</span><b>CROSS-SPECIMEN REVIEW</b></div>
+    <div class="pb">
+      <h2 class="t">WEAKNESS ANALYSIS</h2>
+      <p style="margin-top:8px">관측으로 확인되지 않은 약점은 확정하지 않는다. 각 항목은 아래 기준으로 분류한다.</p>
+      <div class="kv" style="margin-top:12px">
+        <div>${C}</div><div>다수의 현장 관측으로 확인된 특성 · ${cnt('C')}건</div>
+        <div>${I}</div><div>관측 기록이 있으나 추가 실험이 필요한 항목 · ${cnt('I')}건</div>
+        <div>${U}</div><div>관측 근거가 없는 가설 및 미확인 보고 · ${cnt('U')}건</div>
+      </div>
+    </div>
+  </div>
+  ${block('001')}${block('002')}`;
+}
+
+/* ---------- COMPARE ---------- */
+function renderCompare(){
+  const both=S.unlocked['XENO_BIOLOGICAL_REPORT.dat']&&S.unlocked['HOLLOW_BEHAVIOR_REPORT.dat'];
+  const open=S.unlocked['THREAT_COMPARISON.dat'];
+  const meter=(cls,v)=>`<div class="meter ${cls}"><span>위험도</span><div class="m"><i style="width:${v*20}%"></i></div><span>${v}/5</span></div>`;
+  view.innerHTML=`
+  <div class="panel">
+    <div class="ph"><span>BTD-03 / COMPARATIVE ANALYSIS</span><b>SPECIMEN 001 × SPECIMEN 002</b></div>
+    <div class="pb">
+      <h2 class="t">COMPARATIVE ANALYSIS</h2>
+      <p class="mut" style="font-size:12px;margin-top:6px">위험도 막대는 관측 자료를 바탕으로 한 연구소 내부 평가(추정)이며 정량 측정값이 아니다.</p>
+    </div>
+    <div style="overflow-x:auto">
+    <table class="cmp">
+      <tr><th>항목</th><th>SPECIMEN 001 · XENOMORPH</th><th>SPECIMEN 002 · THE HOLLOW</th></tr>
+      ${CMP.map(([k,a,b,va,vb])=>`<tr><td>${k}</td><td>${a}${meter('xen',va)}</td><td>${b}${meter('hol',vb)}</td></tr>`).join('')}
+      ${open?CMP_LOCK.map(([k,a,b])=>`<tr><td>${k}</td><td>${a}</td><td>${b}</td></tr>`).join(''):''}
+    </table></div>
+  </div>
+  ${open?'':`<div class="locked-block">
+    <div class="f">🔒 THREAT_COMPARISON.dat</div>
+    <div class="mut" style="font-size:12px;margin-bottom:12px">주요 위험 요소 · 종합 평가 — 열람 제한</div>
+    <button class="btn red" id="cmpUnlock">ACCESS FILE</button></div>`}`;
+  const b=$('cmpUnlock');
+  if(b)b.onclick=()=>{
+    const miss=['XENO_BIOLOGICAL_REPORT.dat','HOLLOW_BEHAVIOR_REPORT.dat'].filter(f=>!S.unlocked[f]);
+    authSeq('THREAT_COMPARISON.dat',both,'선행 제한 파일 미해제:\n'+miss.map(f=>'  - '+f).join('\n'),
+      ()=>{S.unlocked['THREAT_COMPARISON.dat']=1;save();renderCompare();updateClearance();glitch(view)})};
+}
+
+function updateClearance(){
+  const n=Object.keys(S.unlocked).length;
+  $('clr').textContent='LEVEL '+(2+n);
+}
+
+/* ---------- BOOT ---------- */
+async function boot(){
+  if(sessionStorage.getItem('btd03-boot')){$('boot').remove();route();return}
+  const t=$('bootTxt');let skip=false;
+  // 접속 대기 화면: 클릭/키 입력으로 오디오 활성화 후 부팅
+  $('skip').style.display='none';
+  const gate=document.createElement('div');gate.className='gate';
+  gate.innerHTML='<div class="g1">FACILITY 03 · SECURE TERMINAL</div><div class="g2">[ CLICK OR PRESS ANY KEY TO CONNECT ]</div>';
+  $('boot').appendChild(gate);
+  await new Promise(res=>{const go=()=>{removeEventListener('keydown',go);gate.removeEventListener('click',go);res()};
+    addEventListener('keydown',go);gate.addEventListener('click',go)});
+  SFX.init();gate.remove();$('skip').style.display='';SFX.boot();
+  $('skip').onclick=()=>skip=true;
+  const L=['FACILITY 03 · BIOCONTAINMENT RESEARCH DIVISION','BIOS v4.11 · MEMORY CHECK ......... OK','',
+    'BOOTING RESEARCH DATABASE...','CONNECTING TO FACILITY 03...','ACCESSING BIOLOGICAL ARCHIVE...',
+    '  > specimen_001.idx ........ LOADED','  > specimen_002.idx ........ LOADED','  > restricted/*.dat ........ ENCRYPTED (3)','',
+    'DATABASE CONNECTION ESTABLISHED.'];
+  for(const l of L){
+    if(skip)break;
+    for(const ch of l){if(skip)break;t.textContent+=ch;if(ch!==' ')SFX.key();await sleep(14)}
+    t.textContent+='\n';
+    if(!skip){if(/LOADED|OK/.test(l))SFX.beep();else if(/ENCRYPTED/.test(l)){SFX.crackle(200,.1)}else if(l)SFX.line()}
+    await sleep(skip?0:180)}
+  if(!skip){SFX.ok();await sleep(600)}
+  sessionStorage.setItem('btd03-boot','1');
+  $('boot').style.transition='opacity .4s';$('boot').style.opacity=0;await sleep(400);$('boot').remove();
+  route();glitch(view);
+}
+boot();
+</script>
+</body>
+</html>
